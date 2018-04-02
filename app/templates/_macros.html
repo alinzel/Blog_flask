@@ -1,0 +1,52 @@
+{# TODO 定义宏--重复使用 fragment-片段锚点,定位传入参数位置#}
+{% macro pagination_widget(pagination, endpoint, fragment='') %}
+<ul class="pagination">
+{# TODO 如果当前分页对象没有上一页,则有class属性-->禁用的箭头#}
+    <li {% if not pagination.has_prev %} class="disabled"{% endif %}>
+{#    TODO 如果分页对象有上一页,链接为当前页减1#}
+        <a href="
+                {% if pagination.has_prev %}{{ url_for(endpoint, page=pagination.page - 1, **kwargs)}}{{ fragment }}
+                {% else %}
+                    #
+                {% endif %}">
+            &laquo;
+        </a>
+    </li>
+{# TODO 列表页显示方法--iter_pages(一个生成器)#}
+    {% for p in pagination.iter_pages() %}
+        {% if p %}
+{#            TODO 如果p是当前页,则显示class属性#}
+            {% if p == pagination.page %}
+                <li class="active">
+                    <a href="{{ url_for(endpoint, page = p, **kwargs) }}{{ fragment }}">
+                        {{ p }}
+                    </a>
+                </li>
+{#                TODO 不是当前页则不显示class#}
+            {% else %}
+                <li>
+                    <a href="{{ url_for(endpoint, page=p, **kwargs) }}{{ fragment }}">
+                        {{ p }}
+                    </a>
+                </li>
+            {% endif %}
+{#            TODO p 空 则...显示 #}
+        {% else %}
+            <li class="disabled">
+                <a href="#">
+                    &hellip;
+                </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+{#  TODO 关于下一页的判断逻辑#}
+    <li {% if not pagination.has_next %} class="disabled" {% endif %}>
+        <a href="{% if pagination.has_next %} {{ url_for(endpoint, page = pagination.page + 1, **kwargs) }}{{ fragment }}
+                {% else %}
+                    #
+                {% endif %}">
+        &raquo;
+        </a>
+    </li>
+</ul>
+{% endmacro %}

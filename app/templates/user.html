@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as macros %}
+
+{% block title %}用户资料--{{ user.username }}{% endblock title %}
+
+{% block page_content %}
+    <div class="page-header">
+{#    TODO 头像#}
+        <img class="img-rounded profile-thumbnail" src="{{ user.gravatar(size=256) }}" alt="">
+{#    TODO 个人资料#}
+        <div class="profile-header">
+            <h1>{{ user.username }}</h1>
+            {% if user.name or user.location %}
+                <p>
+                    {% if user.name %}
+                        姓名:{{ user.name }}
+                    {% endif %}
+                    <br>
+                    <br>
+                    {% if user.location %}
+                        来自:
+                        <a href="https://map.baidu.com/" target="_blank">
+                            {{ user.location }}
+                        </a>
+                    {% endif %}
+                </p>
+            {% endif %}
+            {#    TODO 如果是管理员,则显示邮箱地址#}
+            {% if current_user.is_administrator() %}
+                <p>
+                    <a href="mailto:{{ user.email }}">
+                        {{ user.email }}
+                    </a>
+                </p>
+            {% endif %}
+            {% if user.about_me %}
+                <p>{{ user.about_me }}</p>
+            {% endif %}
+            <p>
+                注册时间:{{ moment(user.member_since).format('L') }}
+                上次登录时间:{{ moment(user.last_seen).fromNow() }}
+            </p>
+{#        TODO 关注信息#}
+            <p>
+{#            TODO 如果当前用户有关注权限,同时 当前的用户不是要关注的对象 则进行逻辑处理#}
+                {% if current_user.can(Permission.FOLLOW) and user != current_user %}
+{#                    TODO 如果当前用户没有关注过此User, 则显示关注,并设置视图处理#}
+                    {% if not current_user.is_following(user) %}
+                        <a href="{{ url_for('main.follow', username=user.username ) }}" class="btn btn-primary">
+                            关注
+                        </a>
+{#                     TODO 如果当前用户已经关注过user,则显示取消关注,并进行逻辑处理#}
+                    {% else %}
+                        <a href="{{ url_for('main.unfollow', username=user.username) }}" class="btn btn-default">
+                            取消关注
+                        </a>
+                    {% endif %}
+                {% endif %}
+{#              TODO 显示关注的人, 统计此user关注人的数量[要减去自己] #}
+                <a href="{{ url_for('main.followers', username=user.username) }}">
+                    粉丝: <span class="badge">{{ user.followers.count() - 1}}</span>
+                </a>
+{#              TODO 显示粉丝,统计数量#}
+                <a href="{{ url_for('main.followed_by', username=user.username) }}">
+                    关注: <span class="badge">{{ user.followed.count() - 1 }}</span>
+                </a>
+{#              TODO 如果当前用户已经登录, 要关注的对象,不是当前用户,且User对象关注了当前用户,则提示关注了你#}
+                {% if current_user.is_authenticated and user != current_user and user.is_following(current_user) %}
+                    | <span class="label label-default">关注了你</span>
+                {% endif %}
+            </p>
+            {#    TODO 确保自己才能看见编辑资料信息按钮#}
+            {% if user == current_user %}
+                <a class="btn btn-default" href="{{ url_for('main.edit_profile') }}">
+                    编辑个人资料
+                </a>
+            {% endif %}
+
+            {#    TODO 确保当前是超级管理员才能看见#}
+            {% if current_user.is_administrator() %}
+                <a class="btn btn-danger" href="{{ url_for('main.edit_profile_admin', id=user.id) }}">
+                    编辑资料[管理员]
+                </a>
+            {% endif %}
+        </div>
+
+{#    TODO 显示文章部分 #}
+    </div>
+    <h3> 由{{ user.username }}提交</h3>
+    {% for post in posts %}
+        {% if user == post.author %}
+            <li class="post">
+                <div class="post-thumbnail">
+                    <a href="{{ url_for('.user', username=post.author.username) }}">
+                        <img class="img-rounded profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
+                    </a>
+                </div>
+                <div class="post-content">
+                    <div class="post-date">{{ moment(post.timestamp).fromNow() }}</div>
+                    <div class="post-author"><a href="{{ url_for('.user', username=post.author.username) }}">{{ post.author.username }}</a></div>
+                    <div class="post-body">
+                {% if post.body_html %}
+{#                TODO safe 不转义#}
+                    {{ post.body_html | safe}}
+                {% else %}
+                    {{ post.body }}
+                {% endif %}
+            </div>
+            <div class="post-footer">
+                <a href="{{ url_for('main.post', id=post.id) }}">
+                    <span class="label label-default">链接</span>
+                </a>
+            </div>
+                </div>
+            </li>
+        {% endif %}
+    {% endfor %}
+{#    TODO 分页#}
+    {% if pagination %}
+        <div class="pagination">
+            {{ macros.pagination_widget(pagination, 'main.user', username=user.username) }}
+        </div>
+    {% endif %}
+{% endblock page_content %}

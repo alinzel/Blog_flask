@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as macros %}
+
+{% block title %}{{ user.username }}{{ title }}{% endblock %}
+
+{% block page_content %}
+    <div class="page-header">
+        <h1>{{ user.username }}{{ title }}</h1>
+    </div>
+    <table class="table table-hover followers">
+        <thead>
+            <tr>
+                <th>用户</th>
+                <th>关注时间</th>
+            </tr>
+        </thead>
+{#        TODO 遍历关注者列表--得到后台组装的字典格式#}
+        {% for follow in follows %}
+{#            TODO 如果关注的用户不是自己则显示#}
+            {% if user != follow['user']%}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.user', username=follow['user'].username) }}">
+                            <img class="img-rounded" src="{{ follow['user'].gravatar(size=32) }}" alt="">
+                            {{ follow['user'].username }}
+                        </a>
+                    </td>
+                    <td>
+                        {{ moment(follow['timestamp']).format('L') }}
+                    </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    <div class="pagination">
+{#     TODO endpoint--在某个路由下进行翻页 #}
+        {{ macros.pagination_widget(pagination, endpoint,username=user.username) }}
+    </div>
+{% endblock %}
